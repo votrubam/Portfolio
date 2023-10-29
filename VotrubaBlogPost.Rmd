@@ -1,0 +1,98 @@
+---
+title: "Minneapolis Police Use of Force by Race and Neighborhood"
+author: "Maggie Votruba"
+output:
+  pdf_document: default
+date: "September 28, 2023"
+---
+```{r echo = FALSE, message = FALSE, warning = FALSE}
+# load in data
+MN_puof <- readr::read_csv("https://www.math.carleton.edu/ckelling/data_science/MN_Police_Use_of_Force.csv")
+#load in packages
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+#create subset of data with neighborhoods that I'm using
+MN_puof_subset <- filter(MN_puof, Neighborhood %in% c("Harrison", 
+                                                      "West Calhoun", "Como", 
+                                                      "Powderhorn Park"))
+```
+The topic of policing has been at the forefront of an increased number of discussions over the past few years. There have been questions surrounding the appropriateness of police responses to incidents found in both police patrols as well as responses to 911 calls. These graphics were created using data from the Minneapolis Open Data Initiative to explore Police Use of Force in the Como, Harrison, West Calhoun, and Powderhorn Park in Minneapolis. These neighborhoods were chosen for this topic because they represent different racial neighborhood demographics in Minneapolis. The data spans from 2008 to 2023, and the variables of Race, Neighborhood, Type of Force Used by Officer, and whether or not 911 was called will be considered in this post. In the creation of the data graphics, it was found that police officers overwhelmingly use bodily force when force is used, and police used force on Black people in these neighborhoods at a much higher count than any other race. 
+
+## Demographics of Neighborhoods Being Examined
+```{r echo = FALSE, message = FALSE}
+#bar graph showing racial demographics of neighborhood by use of force counts
+ggplot(data = MN_puof_subset) + geom_bar(aes(fill = Race, y = Neighborhood)) +
+  theme_linedraw() +
+  labs(y = "Minneapolis Neighborhood", x = "Count",
+      title = "Neighborhood Cases of Force Broken Down by Race",
+      caption = "Figure 1: Data Source: Minneapolis Open Data Initiative")
+
+```
+Here, we can see the racial makeups of civilians that police used force on in the neighborhoods being examined. We see that Powderhorn Park has a high count of Black, Indigenous, and People of Color (BIPOC) civilians that were on the receiving end of police officers' use of force. Harrison also has a higher count of BIPOC civilians that force was used on compared to the white civilians of Harrison. Since the x-axis is a count instead of a proportion. The Harrison and Powderhorn Park neighborhoods have higher proportions of BIPOC than West Calhoun and Como so this does not necessarily tell us much about comparisons between race. However, it is interesting to examine the trends within neighborhoods, and to see that Como and West Calhoun have overall less cases of Police using force.
+
+## When Do Minneapolis Police Officers Use Force?
+```{r echo = FALSE}
+library(tidyverse)
+
+# collapse overlapping data categories in TypeofResistance
+MN_puof_subset2 <- MN_puof_subset %>%
+ drop_na(TypeOfResistance) %>%
+ mutate(TypeOfResistance = fct_collapse(
+   TypeOfResistance,
+ Other = c("Other", "Fled in Vehicle", "Fled in a Vehicle"),
+ Tensed = c("Tensed", "TENSED"),
+ Commission = c("Commission of a Crime", "Commission of Crime")
+ )) 
+
+# combine certain categories in ForceType
+MN_puof_subset3 <- MN_puof_subset2 %>%
+ drop_na(ForceType) %>%
+ mutate(ForceType = fct_collapse(
+   ForceType,
+ Other = c("Less Lethal Projectile", 
+           "Police K9 Bite", 
+           "Maximal Restraint Technique",
+           "Improvised Weapon",
+           "Less Lethal",
+           "Baton"
+           ),
+ )) 
+
+  
+#bar chart comparing type of force used with type of resistance displayed
+ggplot(data = MN_puof_subset3) + geom_bar(aes(y = TypeOfResistance,
+                                             fill = ForceType)) + 
+  theme_linedraw() +
+  labs(fill = "Force Type from Police", 
+       y = "Type of Resistance from Civilian", x = "Count", 
+       title = "Civilian Resistance Type by Police Type of Force",
+       caption = "Figure 2: Data Source: Minneapolis Open Data Initiative")
+                                        
+```
+Figure 2 demonstrates that the type of force officers in Minneapolis use is overwhelmingly bodily force no matter the type of civilian resistance. After bodily force, the use of a taser is somewhat common as well as the use of a chemical irritant. A possible reason for the heavy use of bodily force when police use force is that bodily force may be their natural instinct, or the easiest thing to do in the moment. Now that we know police use mostly bodily force, we can see how this breaks down by race.
+
+## Does the Race of the Civilian Impact the Type of Force Used by Officers?
+```{r echo = FALSE}
+#bar chart of force type used broken down by race
+ggplot(data = MN_puof_subset3) + geom_bar(aes(y = Race, fill = ForceType)) +
+  theme_linedraw() + labs(fill = "Force Type from Police", y = "Race", 
+                          x = "Count",
+                        title = "Officer Force Type Broken Down by Race",
+                      caption =  "Figure 3: Data Source: Minneapolis Open 
+                      Data Initiative")
+```
+Figure 3 is describing the force that Minneapolis police officers use against civilians of differing races. We see that the count for use of Force on Black people by police in the four neighborhoods of Harrison, Como, Powderhorn Park, and West Calhoun is the highest by over 200 counts. The White and Black races have the highest two counts, and this is likely due to the demographics of these neighborhoods being made up of mostly White and Black people. Bodily force is still one of the most heavily used methods of force against civilians of all races, but it is hard to ignore how large the count is for police use of force and more specifically bodily force against Black civilians.
+
+## How do 911 Calls Play into Police Use of Force?
+```{r echo = FALSE}
+#interesting because it appears there are more patrolling stops on black people when 911 not called
+#bar chart describing involvement of 911 call by race
+ggplot(data = MN_puof_subset) + geom_bar(aes(x = Is911Call,
+                                             fill = Race)) + theme_linedraw() +
+  labs(y = "Count", x = "Was There a 911 Call?", 
+       title = "Involvement of a 911 Call Broken Down by Race",
+       caption = "Figure 4: Data Source: Minneapolis Open Data Initiative")
+```
+In Figure 4, we are examining the count of civilians that police used force against by civilian race. Here, we notice that most racial groups have similar counts whether there was a 911 Call or not, except for the white racial group. A potential reason that there is less use of force on white people when 911 is not called could be patrolling areas. Police may be patrolling more in areas where more BIPOC people are which causes them to stop more BIPOC civilians without a 911 call. The white areas may be patrolled by officers less which lead to less uses of force against white people when 911 has not been called. The higher patrol of BIPOC spaces could also tie into the high count of incidents of force against Black civilians shown in Figure 3. 
+
